@@ -1,0 +1,41 @@
+magephp:
+  exclude:
+    - ./.idea
+    - ./*DS_Store
+    - ./*.log
+    - ./composer.json
+    - ./composer.lock
+    - ./t3settings
+    - ./t3tools
+    - ./.mage.yml
+    - ./ce-gen.sh
+    - ./.git*
+    - ./mage
+    - ./**/node_modules/*
+    - ./**/bower_components/*
+    - ./**/*.scss
+    - ./web/fileadmin
+    - ./web/typo3temp
+    - ./web/uploads
+  environments:
+    develop:
+      user: root
+      from: ./
+      host_path: html/startpilot
+      releases: 2
+      hosts:
+        - develop.tld.de
+      pre-deploy:
+        ##- fs/copy: { from: 't3settings/develop/AdditionalConfiguration.php', to: 'web/typo3conf/AdditionalConfiguration.php' }
+        ##- exec: { cmd: 'cd web/typo3conf/ext/startpilot/Resources/Gulp && npm install && bower install && gulp', desc: 'Gulp Builds' }
+      on-deploy:
+        - fs/link: { from: '../../../fileadmin', to: 'web/fileadmin' }
+        - fs/link: { from: '../../../uploads', to: 'web/uploads' }
+        - fs/remove: { file: 'web/typo3temp', flags: '-rf' }
+        - fs/link: { from: '../../../typo3temp', to: 'web/typo3temp' }
+        - exec: { cmd: 'php_cli ./typo3cms install:fixfolderstructure', desc: 'Typo3 Console: Fix Folder Stucture' }
+        - exec: { cmd: 'php_cli ./typo3cms database:updateschema', desc: 'Typo3 Console: Updateschema' }
+      on-release:
+        - exec: { cmd: 'php_cli ./typo3cms cache:flush --force', desc: 'Typo3 Console: Clear Caches' }
+      post-deploy:
+        - fs/remove: { file: 'web/typo3conf/AdditionalConfiguration.php', flags: '-rf' }
